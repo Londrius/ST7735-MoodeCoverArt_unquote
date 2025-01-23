@@ -3,7 +3,7 @@ display:
   # Display control overlays:
   # 3=Artwork only
   # 0=Text overlay displayed
-  overlay: 0
+  overlay: 3
 
   # Display Time Bar:
   # 1=time bar displayed

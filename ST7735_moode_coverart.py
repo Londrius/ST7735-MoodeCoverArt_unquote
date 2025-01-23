@@ -12,6 +12,7 @@ from numpy import mean
 import ST7735
 from PIL import ImageFilter
 import yaml
+from urllib.parse import unquote, urlparse
 
 
 # set default config for pirate audio
@@ -86,6 +87,32 @@ sq_back = Image.open(script_path + '/images/squeeze.png').resize((WIDTH,WIDTH), 
 
 draw = ImageDraw.Draw(img, 'RGBA')
 
+
+def convert_coverurl_to_path(data_dict):
+    """
+    Sucht in data_dict nach dem Key 'coverurl'.
+    Falls vorhanden, wird der Wert unquoted,
+    der Pfad extrahiert und wieder im Dictionary gespeichert.
+    Zusätzlich wird ein Dateiname (filename) in das Dictionary geschrieben.
+    """
+    cover_url = data_dict.get('coverurl')
+    if cover_url:
+        # URL-decodieren (z.B. %20 -> Leerzeichen)
+        url_unquoted = unquote(cover_url)
+
+        # Optional: Wenn eine echte URL wie "file:///..." vorliegt:
+        parsed = urlparse(url_unquoted)
+        # Pfad extrahieren (ohne scheme/host)
+        path = parsed.path
+
+        # In Linux-Pfad umgewandelten Wert zurückschreiben:
+        data_dict['coverurl'] = path
+
+        # Falls du auch noch den Dateinamen speichern willst:
+        filename = os.path.basename(path)
+        data_dict['filename'] = filename
+
+    return data_dict
 
 def isServiceActive(service):
 
@@ -225,7 +252,9 @@ def main():
 
                 mpd_current = client.currentsong()
                 mpd_status = client.status()
-                cover = get_cover(moode_meta)
+
+                coverdata = convert_coverurl_to_path(moode_meta)
+                cover = get_cover(coverdata)
 
 
                 
