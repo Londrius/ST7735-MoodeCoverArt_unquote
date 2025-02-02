@@ -1,18 +1,17 @@
 from PIL import Image, ImageDraw, ImageColor, ImageFont, ImageStat
 import subprocess
 import time
-import musicpd
+import mpd
 import os
 import os.path
 from os import path
-import RPi.GPIO as GPIO
+import gpiozero
 from mediafile import MediaFile
 from io import BytesIO
 from numpy import mean 
-import ST7735
+import st7735
 from PIL import ImageFilter
 import yaml
-from urllib.parse import unquote, urlparse
 
 
 # set default config for pirate audio
@@ -53,7 +52,7 @@ if path.exists(confile):
      
 
 # Create ST7735 LCD display class. If using ST7789, delete the st7735 coding. then uncomment the ST7789
-disp = ST7735.ST7735(
+disp = st7735.ST7735(
     port=0,
     cs=0,   #ST7735.BG_SPI_CS_FRONT,  # BG_SPI_CSB_BACK or BG_SPI_CS_FRONT
     dc=9,
@@ -87,32 +86,6 @@ sq_back = Image.open(script_path + '/images/squeeze.png').resize((WIDTH,WIDTH), 
 
 draw = ImageDraw.Draw(img, 'RGBA')
 
-
-def convert_coverurl_to_path(data_dict):
-    """
-    Sucht in data_dict nach dem Key 'coverurl'.
-    Falls vorhanden, wird der Wert unquoted,
-    der Pfad extrahiert und wieder im Dictionary gespeichert.
-    Zusätzlich wird ein Dateiname (filename) in das Dictionary geschrieben.
-    """
-    cover_url = data_dict.get('coverurl')
-    if cover_url:
-        # URL-decodieren (z.B. %20 -> Leerzeichen)
-        url_unquoted = unquote(cover_url)
-
-        # Optional: Wenn eine echte URL wie "file:///..." vorliegt:
-        parsed = urlparse(url_unquoted)
-        # Pfad extrahieren (ohne scheme/host)
-        path = parsed.path
-
-        # In Linux-Pfad umgewandelten Wert zurückschreiben:
-        data_dict['coverurl'] = path
-
-        # Falls du auch noch den Dateinamen speichern willst:
-        filename = os.path.basename(path)
-        data_dict['filename'] = filename
-
-    return data_dict
 
 def isServiceActive(service):
 
@@ -242,7 +215,7 @@ def main():
 
     if act_mpd == True:
         while True:
-            client = musicpd.MPDClient()   # create client object
+            client = mpd.MPDClient()   # create client object
             try:     
                 client.connect()           # use MPD_HOST/MPD_PORT
             except:
@@ -252,9 +225,7 @@ def main():
 
                 mpd_current = client.currentsong()
                 mpd_status = client.status()
-
-                coverdata = convert_coverurl_to_path(moode_meta)
-                cover = get_cover(coverdata)
+                cover = get_cover(moode_meta)
 
 
                 
